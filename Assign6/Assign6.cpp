@@ -1,11 +1,15 @@
 #include <iostream>
+#include<vector>
+
 #include "Window.h"
 #include "Shader.h"
-#include "Mesh.h"
+
 #include <glm\glm.hpp>
 #include <glm\gtc\matrix_transform.hpp>
 #include <glm\gtc\type_ptr.hpp>
-#include<vector>
+
+
+
 // Vertex Shader code
 static const char* vShader = "Shaders/shader.vert";
 
@@ -15,38 +19,38 @@ static const char* fShader = "Shaders/shader.frag";
 
 //std::vector<Shader> shaderList;
 Shader shader;
-Mesh obj;
 
 
 void CreateShader() {
-	//Shader* shader = new Shader;
 	shader.createFromFiles(vShader, fShader);
 }
 
+
+
+glm::vec3 decast(std::vector<glm::vec3> control , int r, float t, int i) {
+
+
+	if (r == 0) {
+		return control[i];
+	}
+	else {
+
+		return (1 - t) * decast(control, r - 1,t, i) + t * decast(control, r - 1,t, i + 1);
+	}
+
+}
 
 
 int main()
 
 
 {
-	GLfloat vertices[] = {
-	 0.5f,  0.5f, 0.0f,  // top right
-	 0.5f, -0.5f, 0.0f,  // bottom right
-	-0.5f, -0.5f, 0.0f,  // bottom left
-	-0.5f,  0.5f, 0.0f   // top left 
-	};
-	GLuint indices[] = {  // note that we start from 0!
-		0, 1,   // first line
-		1, 2,    // second line
-		2,3,
-	};
-
+	
 	Window mainWindow = Window(800, 600);
 	mainWindow.intitialise();
 	CreateShader();
-	//obj.CreateMesh(vertices, indices, 6);
 
-	int maxPoints = 100;
+	int maxPoints = 1000;
 
 	GLuint VBO, VAO, EBO;
 	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
@@ -81,38 +85,56 @@ int main()
 
 		
 		// Clear window
-		glClearColor(0.48f, 0.917f, 0.87f, 1.0f);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		shader.UseProgram();
 		glBindVertexArray(VAO);
 
-
-		//obj.RenderMesh();
-
-		// Get + Handle user input events
-
 		std::vector<glm::vec3> newVertices = mainWindow.getVertices();
 		std::vector<int> newIndices = mainWindow.getIndices();
-		//int indc[100] = {0};
+		std::vector<glm::vec3> bezierPoints;
+		std::vector<int> bezierIndices;
 
 		if (newVertices.size() > 1) {
 
-		
-			/*for (int i = 0; i < newIndices.size(); i++) {
-				indc[i] = newIndices[i];
-			
-			}*/
-			std::cout << sizeof(newVertices)<< " "<< newVertices.size() << " " << sizeof(newIndices)<< newIndices.size() << " " << "\n";
+			glUniform4f(shader.GetColourLocation(), 1.0f, 0.0f, 0.0f, 1.0f);
+
+	
 			glBindBuffer(GL_ARRAY_BUFFER, VBO);
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 
 			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(newVertices[0]) * newVertices.size(), newVertices.data());
 			glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(newIndices[0]) * newIndices.size(), newIndices.data());
 
-			//glDrawArrays(GL_LINES, 0, 3);
-
 
 			glDrawElements(GL_LINES, newIndices.size(), GL_UNSIGNED_INT, 0);
+
+
+			for (float t = 0.0f; t <= 1.0f; t += 0.05f) {
+				
+				glm::vec3 point;
+				point = decast(newVertices, newVertices.size()-1, t, 0);
+				bezierPoints.push_back(point);
+				if (bezierPoints.size()>1) {
+					bezierIndices.push_back(bezierPoints.size()-2);
+					bezierIndices.push_back(bezierPoints.size() - 1);
+				}
+				//std::cout << point[0] << " " << point[1] << " " << point[2] << "\n";
+					
+			}
+			bezierPoints.push_back(newVertices.back());
+			bezierIndices.push_back(bezierPoints.size() - 2);
+			bezierIndices.push_back(bezierPoints.size() - 1);
+
+			glUniform4f(shader.GetColourLocation(), 0.0f, 1.0f, 0.0f, 1.0f);
+
+
+			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(bezierPoints[0]) * bezierPoints.size(), bezierPoints.data());
+			glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(bezierIndices[0]) * bezierIndices.size(), bezierIndices.data());
+
+
+			glDrawElements(GL_LINES, bezierIndices.size(), GL_UNSIGNED_INT, 0);
+
 
 		}
 		

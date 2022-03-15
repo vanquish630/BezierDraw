@@ -3,8 +3,7 @@
 Shader::Shader()
 {
     shaderID = 0;
-    uniformModel = 0;
-    uniformProjection = 0;
+    uniformColour = 0;
 }
 
 void Shader::createFromString(const char* vertexCode, const char* fragmentCode)
@@ -86,25 +85,7 @@ void Shader::CompileShader(const char* vertexCode, const char* fragmentCode)
 		return;
 	}
 
-	uniformModel = glGetUniformLocation(shaderID, "model"); // stores id 
-	uniformProjection = glGetUniformLocation(shaderID, "projection");
-	uniformView = glGetUniformLocation(shaderID, "view"); // name should be same in .vert file
-}
-
-
-GLuint Shader::GetProjectionLocation()
-{
-    return uniformProjection;
-}
-
-GLuint Shader::GetModelLocation()
-{
-    return uniformModel;
-}
-
-GLuint Shader::GetViewLocation()
-{
-	return uniformView;
+	uniformColour= glGetUniformLocation(shaderID, "customColour"); // stores id 
 }
 
 
@@ -120,8 +101,7 @@ void Shader::ClearShader()
 		glDeleteProgram(shaderID);
 		shaderID = 0;
 	}
-	uniformModel = 0;
-	uniformProjection = 0;
+	uniformColour = 0;
 }
 
 
